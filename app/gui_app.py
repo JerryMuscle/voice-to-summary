@@ -1,5 +1,7 @@
 import tkinter as tk
-from services.recorder import start_audio_capture, stop_audio_capture
+from services.recorder import Recorder
+
+recorder = Recorder()
 
 class AudioSummaryApp:
     def __init__(self, root):
@@ -16,11 +18,11 @@ class AudioSummaryApp:
         self.summary_text.pack()
 
         # 録音開始ボタン
-        self.start_btn = tk.Button(self.root, text="Recording", command=start_audio_capture)
+        self.start_btn = tk.Button(self.root, text="音声取得開始", command=recorder.start_audio_capture)
         self.start_btn.place(x=50, y=400)
 
         # 録音終了ボタン
-        self.stop_btn = tk.Button(self.root, text="stop\n and\n sumarize", command=stop_audio_capture)
+        self.stop_btn = tk.Button(self.root, text="終了し要約開始", command=recorder.stop_audio_capture)
         self.stop_btn.place(x=350, y=400)
 
 if __name__ == "__main__":
