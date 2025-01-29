@@ -1,6 +1,8 @@
 import whisper
+# import torch
 import numpy as np
 import soundfile as sf
+# from transformers import WhisperProcessor, WhisperForConditionalGeneration
 
 class AudioTranscriber:
     def __init__(self, model_name="base"):
@@ -13,6 +15,17 @@ class AudioTranscriber:
         """
         # TODO: whisperのモデルサイズをguiで選べるようにする
         self.model = whisper.load_model(model_name)
+
+        """
+        # kotoba-whisper-v2.0でできないか検討中
+        # 設定
+        model_id = "kotoba-tech/kotoba-whisper-v2.0"
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # プロセッサとモデルのロード
+        self.processor = WhisperProcessor.from_pretrained(model_id)
+        self.model = WhisperForConditionalGeneration.from_pretrained(model_id).to(device)
+        """
 
     def transcribe_from_array(self, audio_data: np.ndarray, sample_rate: int) -> str:
         """
