@@ -8,15 +8,21 @@ class AudioSummaryApp:
         self.root.title('動画音声要約アプリ')
         self.root.geometry('500x500')
         self.recorder = Recorder()
-        self.transcriber = AudioTranscriber()  # Whisperモデル
+        self.transcriber = AudioTranscriber()
         self.create_widgets()
 
     def create_widgets(self):
-        # 要約結果表示
+        # 要約結果
         self.summary_label = tk.Label(self.root, text="要約結果", font=("Arial", 14))
         self.summary_label.pack(pady=10)
         self.summary_text = tk.Text(self.root, height=25, width=50)
         self.summary_text.pack()
+
+        # # 要約結果
+        # self.summary_label = tk.Label(self.root, text="要約結果", font=("Arial", 14))
+        # self.summary_label.pack(pady=10)
+        # self.summary_text = tk.Text(self.root, height=25, width=50)
+        # self.summary_text.pack()
 
         # 録音開始ボタン
         self.start_btn = tk.Button(

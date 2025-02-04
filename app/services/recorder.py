@@ -11,7 +11,7 @@ class Recorder:
                 channels (int): チャネル数 (モノラル = 1)。
             """
             self.sample_rate = 44100
-            self.channels = 2
+            self.channels = 1
             self.is_recording = False
             self.audio_buffer = []
             self._thread = None
@@ -55,7 +55,7 @@ class Recorder:
 
     def stop_audio_capture(self):
         """
-        音声取得の停止する。
+        音声取得を停止する。
         """
         if not self.is_recording:
             print("音声は取得していません。")

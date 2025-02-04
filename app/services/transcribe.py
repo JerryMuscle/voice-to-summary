@@ -1,31 +1,37 @@
 import whisper
-# import torch
 import numpy as np
 import soundfile as sf
-# from transformers import WhisperProcessor, WhisperForConditionalGeneration
+import torch
+from transformers import pipeline
+from services.summarizer import summarize_text
 
 class AudioTranscriber:
-    def __init__(self, model_name="base"):
+    def __init__(self):
         """
-        Whisperモデルを初期化します。
+        文字起こしモデルの初期化
+        Whisper: 英語用
+        kotoba-whisper-v2.0: 日本語用
         
         Args:
             model_name (str): 使用するWhisperモデルの種類
               ("tiny", "base", "small", "medium", "large")。
         """
         # TODO: whisperのモデルサイズをguiで選べるようにする
-        self.model = whisper.load_model(model_name)
+        # model_name="base"
+        # self.model = whisper.load_model(model_name)
 
-        """
-        # kotoba-whisper-v2.0でできないか検討中
-        # 設定
+        #  kotoba-whisperのモデル設定
         model_id = "kotoba-tech/kotoba-whisper-v2.0"
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        torch_dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-        # プロセッサとモデルのロード
-        self.processor = WhisperProcessor.from_pretrained(model_id)
-        self.model = WhisperForConditionalGeneration.from_pretrained(model_id).to(device)
-        """
+        # モデルロード
+        self.pipe = pipeline(
+            "automatic-speech-recognition",
+            model=model_id,
+            torch_dtype=torch_dtype,
+            device=device
+        )
 
     def transcribe_from_array(self, audio_data: np.ndarray, sample_rate: int) -> str:
         """
@@ -37,25 +43,29 @@ class AudioTranscriber:
 
         Returns:
             str: 文字起こしされたテキスト。
-        """
-        # NumPy配列をWAVファイル形式に変換(文字起こしのための一時的なもの)
-        # こうしたらリアルタイムで文字起こしできない？？一回一回ファイル作ってたら処理速度遅くなりそう
-        temp_filename = "temp_audio.wav"
-        sf.write(temp_filename, audio_data, sample_rate)
-        
-        # Whisperで文字起こし
-        result = self.model.transcribe(temp_filename, fp16=False)
+        """        
+        # Whisper用で文字起こし
+        # result = self.model.transcribe(temp_filename, fp16=False)
+
+        generate_kwargs = {
+            "language": "ja", 
+            "task": "transcribe", 
+            "return_timestamps": True  # 長い音声対応（タイムスタンプ付き）
+        }
+        mono_audio_data = convert_to_mono(audio_data)
+        print(mono_audio_data.shape)
+        result = self.pipe({"array": mono_audio_data, "sampling_rate": sample_rate}, generate_kwargs=generate_kwargs)
         return result["text"]
-
-    def transcribe_from_file(self, file_path: str) -> str:
-        """
-        WAVファイルから文字起こしを行います。
-
-        Args:
-            file_path (str): 音声ファイルのパス。
-
-        Returns:
-            str: 文字起こしされたテキスト。
-        """
-        result = self.model.transcribe(file_path, fp16=False)
-        return result["text"]
+    
+# ステレオ（2ch）→ モノラル（1ch）に変換する関数
+def convert_to_mono(audio_array):
+    """
+        この変換で処理時間が伸びてると思う
+        TODO:処理速度を比較する
+            1. 音声データ.wavから文字起こしする
+            2. Black Holeで最初から1chで録音できないか調べる→できたら実行
+            3. その他の方法
+    """
+    if len(audio_array.shape) > 1 and audio_array.shape[1] == 2:
+        audio_array = np.mean(audio_array, axis=1, dtype=np.float32)  # ステレオをモノラル化
+    return audio_array.squeeze().astype(np.float32)
