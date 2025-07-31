@@ -12,7 +12,7 @@ class AudioSummaryApp:
         self.create_widgets()
 
     def create_widgets(self):
-        # 要約結果
+        # 文字起こし
         self.summary_label = tk.Label(self.root, text="要約結果", font=("Arial", 14))
         self.summary_label.pack(pady=10)
         self.summary_text = tk.Text(self.root, height=25, width=50)

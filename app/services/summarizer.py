@@ -1,16 +1,10 @@
-import torch
-import soundfile as sf
-from transformers import AutoFeatureExtractor, AutoModel
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-# モデルのロード（Base または Large）
-model_name = "rinna/japanese-hubert-large"
-feature_extractor = AutoFeatureExtractor.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
-model.eval()
-
-def summarize_text(temp_filename) -> str:
+def summarize_text(text) -> str:
     """
-    長文テキストを LongT5 を使用して要約する関数。
+    あんまりいいモデルがなさそうだから、OpenAIのモデルにする
 
     Args:
         text (str): 文字起こしした長文テキスト
@@ -19,24 +13,22 @@ def summarize_text(temp_filename) -> str:
         str: 要約されたテキスト
     """
 
-    raw_speech_16kHz, sr = sf.read(temp_filename)
-    inputs = feature_extractor(
-        raw_speech_16kHz,
-        return_tensors="pt",
-        sampling_rate=sr,
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    client = OpenAI(api_key = api_key)
+    # プロンプト作成（要約指示）
+    messages = [
+        {"role": "system", "content": "あなたは医学の専門家であり、優秀な日本語の文章要約者です。"},
+        {"role": "user", "content": f"""以下は医学的な内容の会話やプレゼンの文字起こしです。いくつか不自然な部分がありますが補完して、内容を要約してください。
+            ・重要な点を箇条書きで整理してください。
+            ・話の流れがわかるよう、段落ごとに適切に改行してください。
+            【文字起こし】:{text}"""}
+    ]
+
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input=messages,
+        store=True,
     )
-    outputs = model(**inputs)
-    # # 入力テキストをトークナイズ（LongT5 は最大 16K トークンを処理可能）
-    # inputs = tokenizer(text, return_tensors="pt", max_length=16384, truncation=True)
-    
-    # # モデルが GPU なら入力も GPU に送る
-    # device = "cuda" if torch.cuda.is_available() else "cpu"
-    # inputs = {k: v.to(device) for k, v in inputs.items()}
-
-    # # 要約を生成
-    # with torch.no_grad():
-    #     summary_ids = model.generate(**inputs, max_length=200, min_length=50, length_penalty=2.0, num_beams=4)
-
-    # # 要約結果をデコードして返す
-    # summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
-    return outputs
+    return response.output_text

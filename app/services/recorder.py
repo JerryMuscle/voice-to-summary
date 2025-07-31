@@ -44,13 +44,14 @@ class Recorder:
         音声データを録音バッファに追加するコールバック関数。
 
         Args:
-            indata (np.ndarray): 取得した音声たデータ。
+            indata (np.ndarray): 取得した音声データ。
             frames (int): フレーム数。
             time (CData): 時間情報。
             status (CallbackFlags): ステータス情報。
         """
         if status:
             print(f"録音中にエラーが発生しました: {status}")
+            return None
         self.audio_buffer.append(indata.copy())
 
     def stop_audio_capture(self):
@@ -81,4 +82,8 @@ class Recorder:
         if not self.audio_buffer:
             print("録音データが存在しません。")
             return None
-        return np.concatenate(self.audio_buffer)
+        try:
+            return np.concatenate(self.audio_buffer)
+        except Exception as e:
+            print(f"録音データの結合に失敗しました: {e}")
+            return None

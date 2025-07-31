@@ -53,14 +53,20 @@ class AudioTranscriber:
             "return_timestamps": True  # 長い音声対応（タイムスタンプ付き）
         }
         mono_audio_data = convert_to_mono(audio_data)
-        print(mono_audio_data.shape)
-        result = self.pipe({"array": mono_audio_data, "sampling_rate": sample_rate}, generate_kwargs=generate_kwargs)
-        return result["text"]
+        normalized_audio = normalize_audio(mono_audio_data)
+        result = self.pipe({"array": normalized_audio, "sampling_rate": sample_rate}, generate_kwargs=generate_kwargs)
+        # 要約処理
+        summrize_result  = summarize_text(result["text"])
+
+        return summrize_result
     
 # ステレオ（2ch）→ モノラル（1ch）に変換する関数
 def convert_to_mono(audio_array):
     """
-        この変換で処理時間が伸びてると思う
+        2chは左右の音をそれぞれ取得、1chは全体で同じ音
+        [ [L1, R1], [L2, R2], ... ]⇨[ M1, M2, M3, ... ]にするイメージ
+
+        この変換で処理時間が伸びてるのでは？？
         TODO:処理速度を比較する
             1. 音声データ.wavから文字起こしする
             2. Black Holeで最初から1chで録音できないか調べる→できたら実行
@@ -69,3 +75,8 @@ def convert_to_mono(audio_array):
     if len(audio_array.shape) > 1 and audio_array.shape[1] == 2:
         audio_array = np.mean(audio_array, axis=1, dtype=np.float32)  # ステレオをモノラル化
     return audio_array.squeeze().astype(np.float32)
+
+# 音声の正規化
+def normalize_audio(audio: np.ndarray) -> np.ndarray:
+    max_val = np.max(np.abs(audio))
+    return audio / max_val if max_val > 0 else audio
