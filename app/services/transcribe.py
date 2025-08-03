@@ -57,7 +57,7 @@ class AudioTranscriber:
         result = self.pipe({"array": normalized_audio, "sampling_rate": sample_rate}, generate_kwargs=generate_kwargs)
         # 要約処理
         summrize_result  = summarize_text(result["text"])
-
+        print("要約終了")
         return summrize_result
     
 # ステレオ（2ch）→ モノラル（1ch）に変換する関数

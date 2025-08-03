@@ -18,12 +18,6 @@ class AudioSummaryApp:
         self.summary_text = tk.Text(self.root, height=25, width=50)
         self.summary_text.pack()
 
-        # # 要約結果
-        # self.summary_label = tk.Label(self.root, text="要約結果", font=("Arial", 14))
-        # self.summary_label.pack(pady=10)
-        # self.summary_text = tk.Text(self.root, height=25, width=50)
-        # self.summary_text.pack()
-
         # 録音開始ボタン
         self.start_btn = tk.Button(
             self.root, text="音声取得開始", command=self.start_recording, 
@@ -39,13 +33,16 @@ class AudioSummaryApp:
     def start_recording(self):
         """
         録音を開始する。
+            max_duration_secの時間分経過後、自動で録音処理を実施
+            とりあえず15分に設定
         """
-        self.recorder.start_audio_capture()
+        self.recorder.start_audio_capture(max_duration_sec=900, on_stop=self.stop_and_transcribe)
 
     def stop_and_transcribe(self):
         """
-        録音を停止して文字起こしを実行する。
+        録音を停止して文字起こし⇨内容の要約を実施する
         """
+        print("文字起こしと録音を開始します")
         self.recorder.stop_audio_capture()
         audio_data = self.recorder.get_recorded_data()
 
