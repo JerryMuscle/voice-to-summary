@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import filedialog, messagebox
 from services.recorder import Recorder
 from services.transcribe import AudioTranscriber
 
@@ -30,6 +31,10 @@ class AudioSummaryApp:
                 height=5, width=10)
         self.stop_btn.place(x=350, y=400)
 
+        # 保存ボタン
+        self.save_button = tk.Button(root, text="要約を保存", command=self.save_summary_to_file)
+        self.save_button.pack(pady=5)
+
     def start_recording(self):
         """
         録音を開始する。
@@ -51,8 +56,30 @@ class AudioSummaryApp:
             self.summary_text.delete("1.0", tk.END)
             self.summary_text.insert(tk.END, text)
         else:
-            self.summary_text.delete("1.0", tk.END)
-            self.summary_text.insert(tk.END, "録音データがありません。")
+            messagebox.showwarning("警告", "録音データがありません")
+
+    def save_summary_to_file(self):
+        # テキストボックスの中身を取得
+        summary = self.summary_text.get("1.0", tk.END).strip()
+
+        if not summary:
+            messagebox.showwarning("警告", "要約テキストが空です。")
+            return
+
+        # ファイルダイアログを開く
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt")],
+            title="要約の保存先を選択"
+        )
+
+        if file_path:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(summary)
+                messagebox.showinfo("完了", "要約を保存しました。")
+            except Exception as e:
+                messagebox.showerror("エラー", f"ファイルの保存に失敗しました:\n{e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
