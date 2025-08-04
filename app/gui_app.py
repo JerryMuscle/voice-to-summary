@@ -41,6 +41,16 @@ class AudioSummaryApp:
             max_duration_secの時間分経過後、自動で録音処理を実施
             とりあえず15分に設定
         """
+        summary = self.summary_text.get("1.0", tk.END).strip()
+
+        if summary:
+            proceed = messagebox.askokcancel(
+                "確認",
+                "前回の要約結果があります。\n録音を開始すると上書きされますが、よろしいですか？"
+            )
+            if not proceed:
+                return
+        
         self.recorder.start_audio_capture(max_duration_sec=900, on_stop=self.stop_and_transcribe)
 
     def stop_and_transcribe(self):
