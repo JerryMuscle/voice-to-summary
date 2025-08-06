@@ -37,19 +37,30 @@ class AudioSummaryApp:
 
     def start_recording(self):
         """
-        録音を開始する。
-            max_duration_secの時間分経過後、自動で録音処理を実施
-            とりあえず15分に設定
+            録音を開始する。
+                max_duration_secの時間分経過後、自動で録音停止⇨要約を実施
+                とりあえず15分に設定
         """
+        summary = self.summary_text.get("1.0", tk.END).strip()
+
+        if summary:
+            proceed = messagebox.askokcancel(
+                "確認",
+                "前回の要約結果があります。\n録音を開始すると上書きされますが、よろしいですか？"
+            )
+            if not proceed:
+                return
+        
         self.recorder.start_audio_capture(max_duration_sec=900, on_stop=self.stop_and_transcribe)
 
     def stop_and_transcribe(self):
         """
-        録音を停止して文字起こし⇨内容の要約を実施する
+            録音を停止して文字起こし⇨内容の要約を実施する
         """
         print("文字起こしと録音を開始します")
         self.recorder.stop_audio_capture()
         audio_data = self.recorder.get_recorded_data()
+        self.recorder.clear_audio_buffer()
 
         if audio_data is not None:
             text = self.transcriber.transcribe_from_array(audio_data, self.recorder.sample_rate)
@@ -59,6 +70,9 @@ class AudioSummaryApp:
             messagebox.showwarning("警告", "録音データがありません")
 
     def save_summary_to_file(self):
+        """
+            テキストファイルへの出力
+        """
         # テキストボックスの中身を取得
         summary = self.summary_text.get("1.0", tk.END).strip()
 

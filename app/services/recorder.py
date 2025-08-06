@@ -115,3 +115,10 @@ class Recorder:
             print("録音は安全に停止されました。")
         except Exception as e:
             print(f"録音停止中にエラーが発生しました: {e}")
+
+    def clear_audio_buffer(self):
+        """
+            音声バッファをクリアする
+             要約後にもう一度要約ボタンを押すと、処理が実施してしまうため
+        """
+        self.audio_buffer = []
