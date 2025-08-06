@@ -1,4 +1,3 @@
-import whisper
 import numpy as np
 import soundfile as sf
 import torch
@@ -11,14 +10,8 @@ class AudioTranscriber:
         文字起こしモデルの初期化
         Whisper: 英語用
         kotoba-whisper-v2.0: 日本語用
-        
-        Args:
-            model_name (str): 使用するWhisperモデルの種類
-              ("tiny", "base", "small", "medium", "large")。
+
         """
-        # TODO: whisperのモデルサイズをguiで選べるようにする
-        # model_name="base"
-        # self.model = whisper.load_model(model_name)
 
         #  kotoba-whisperのモデル設定
         model_id = "kotoba-tech/kotoba-whisper-v2.0"
@@ -44,8 +37,6 @@ class AudioTranscriber:
         Returns:
             str: 文字起こしされたテキスト。
         """        
-        # Whisper用で文字起こし
-        # result = self.model.transcribe(temp_filename, fp16=False)
 
         generate_kwargs = {
             "language": "ja", 
@@ -60,17 +51,11 @@ class AudioTranscriber:
         print("要約終了")
         return summrize_result
     
-# ステレオ（2ch）→ モノラル（1ch）に変換する関数
 def convert_to_mono(audio_array):
     """
-        2chは左右の音をそれぞれ取得、1chは全体で同じ音
-        [ [L1, R1], [L2, R2], ... ]⇨[ M1, M2, M3, ... ]にするイメージ
-
-        この変換で処理時間が伸びてるのでは？？
-        TODO:処理速度を比較する
-            1. 音声データ.wavから文字起こしする
-            2. Black Holeで最初から1chで録音できないか調べる→できたら実行
-            3. その他の方法
+        ステレオ（2ch）→ モノラル（1ch）に変換する関数
+            2chは左右の音をそれぞれ取得、1chは全体で同じ音
+            [ [L1, R1], [L2, R2], ... ]⇨[ M1, M2, M3, ... ]にするイメージ
     """
     if len(audio_array.shape) > 1 and audio_array.shape[1] == 2:
         audio_array = np.mean(audio_array, axis=1, dtype=np.float32)  # ステレオをモノラル化
