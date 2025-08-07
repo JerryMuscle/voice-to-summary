@@ -47,6 +47,7 @@ class AudioTranscriber:
         normalized_audio = normalize_audio(mono_audio_data)
         result = self.pipe({"array": normalized_audio, "sampling_rate": sample_rate}, generate_kwargs=generate_kwargs)
         # 要約処理
+        print("要約を開始します")
         summrize_result  = summarize_text(result["text"])
         print("要約終了")
         return summrize_result
