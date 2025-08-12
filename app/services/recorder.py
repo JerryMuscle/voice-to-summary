@@ -6,7 +6,7 @@ import time
 class Recorder:
     def __init__(self):
 
-            self.sample_rate = 44100
+            self.sample_rate = 16000
             self.channels = 1
             self.is_recording = False
             self.audio_buffer = []
