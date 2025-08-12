@@ -1,6 +1,8 @@
 import numpy as np
 import soundfile as sf
 import torch
+import math
+from concurrent.futures import ThreadPoolExecutor
 from transformers import pipeline
 from services.summarizer import summarize_text
 
@@ -8,15 +10,14 @@ class AudioTranscriber:
     def __init__(self):
         """
         文字起こしモデルの初期化
-        Whisper: 英語用
-        kotoba-whisper-v2.0: 日本語用
 
         """
 
         #  kotoba-whisperのモデル設定
         model_id = "kotoba-tech/kotoba-whisper-v2.0"
         torch_dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        # GPUで処理できるように
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
 
         # モデルロード
         self.pipe = pipeline(
@@ -26,29 +27,59 @@ class AudioTranscriber:
             device=device
         )
 
-    def transcribe_from_array(self, audio_data: np.ndarray, sample_rate: int) -> str:
+        self.generate_kwargs = {
+            "language": "ja", 
+            "task": "transcribe", 
+            "return_timestamps": True,
+            "temperature": 0.3,
+            "no_repeat_ngram_size": 3,
+            "repetition_penalty": 1.2
+        }
+
+    def transcribe_segment(self, segment_audio, sample_rate):
         """
-        NumPy配列の音声データを文字起こしします。
+        セグメントごとの録音データを文字起こし
+        
+        Args:
+            segment_audio:セグメントされた音声データ(60s)
+        """
+        result = self.pipe({"array": segment_audio, "sampling_rate": sample_rate}, generate_kwargs=self.generate_kwargs)
+        return result["text"]
+
+    def transcribe_from_array(self, audio_data: np.ndarray, sample_rate: int, segment_sec=60, max_workers=2) -> str:
+        """
+        NumPy配列の音声データを30秒のセグメントごとに文字起こし⇨結果を結合⇨要約の実施
 
         Args:
             audio_data (np.ndarray): 録音された音声データ。
             sample_rate (int): 音声データのサンプリングレート。
 
         Returns:
-            str: 文字起こしされたテキスト。
+            str: 文字起こしされた⇨要約されたテキスト。
         """        
-
-        generate_kwargs = {
-            "language": "ja", 
-            "task": "transcribe", 
-            "return_timestamps": True  # 長い音声対応（タイムスタンプ付き）
-        }
+        # 文字起こし処理
         mono_audio_data = convert_to_mono(audio_data)
         normalized_audio = normalize_audio(mono_audio_data)
-        result = self.pipe({"array": normalized_audio, "sampling_rate": sample_rate}, generate_kwargs=generate_kwargs)
+
+        segment_len = segment_sec * sample_rate
+        num_segments = math.ceil(len(normalized_audio) / segment_len)
+
+        segments = []
+        for i in range(num_segments):
+            start = i * segment_len
+            end = min((i + 1) * segment_len, len(normalized_audio))
+            segments.append(normalized_audio[start:end])
+
+        texts = []
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(self.transcribe_segment, seg, sample_rate) for seg in segments]
+            for future in futures:
+                texts.append(future.result())
+
+
         # 要約処理
         print("要約を開始します")
-        summrize_result  = summarize_text(result["text"])
+        summrize_result  = summarize_text(texts)
         print("要約終了")
         return summrize_result
     

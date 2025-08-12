@@ -73,11 +73,12 @@ class AudioSummaryApp:
         """
         print("文字起こしを開始します")
         self.set_status("要約中...", busy=True)
-        self.recorder.stop_audio_capture()
-        audio_data = self.recorder.get_recorded_data()
+        self.recorder.stop_audio_capture()              # 録音の停止
+        audio_data = self.recorder.get_recorded_data()  # 音声データの取得
         self.recorder.clear_audio_buffer()
-
+        
         if audio_data is not None:
+            # 文字起こしと要約の実施
             text = self.transcriber.transcribe_from_array(audio_data, self.recorder.sample_rate)
             self.summary_text.delete("1.0", tk.END)
             self.summary_text.insert(tk.END, text)
