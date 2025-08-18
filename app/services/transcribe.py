@@ -4,7 +4,7 @@ import torch
 import math
 from concurrent.futures import ThreadPoolExecutor
 from transformers import pipeline
-from services.summarizer import summarize_text
+from services.summarizer import Summarizer
 
 class AudioTranscriber:
     def __init__(self):
@@ -12,7 +12,7 @@ class AudioTranscriber:
         文字起こしモデルの初期化
 
         """
-
+        self.summarize = Summarizer()
         #  kotoba-whisperのモデル設定
         model_id = "kotoba-tech/kotoba-whisper-v2.0"
         torch_dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
@@ -57,13 +57,13 @@ class AudioTranscriber:
         Returns:
             str: 文字起こしされた⇨要約されたテキスト。
         """        
-        # 文字起こし処理
         mono_audio_data = convert_to_mono(audio_data)
         normalized_audio = normalize_audio(mono_audio_data)
 
         segment_len = segment_sec * sample_rate
         num_segments = math.ceil(len(normalized_audio) / segment_len)
 
+        # セグメントごとに分割して文字起こし
         segments = []
         for i in range(num_segments):
             start = i * segment_len
@@ -76,10 +76,10 @@ class AudioTranscriber:
             for future in futures:
                 texts.append(future.result())
 
-
-        # 要約処理
+        # 医学用語の補正
+        corrected_text = self.summarize.correct_medical_terms(texts)
         print("要約を開始します")
-        summrize_result  = summarize_text(texts)
+        summrize_result  = self.summarize.summarize_text(corrected_text)
         print("要約終了")
         return summrize_result
     
@@ -90,10 +90,13 @@ def convert_to_mono(audio_array):
             [ [L1, R1], [L2, R2], ... ]⇨[ M1, M2, M3, ... ]にするイメージ
     """
     if len(audio_array.shape) > 1 and audio_array.shape[1] == 2:
-        audio_array = np.mean(audio_array, axis=1, dtype=np.float32)  # ステレオをモノラル化
+        audio_array = np.mean(audio_array, axis=1, dtype=np.float32)
     return audio_array.squeeze().astype(np.float32)
 
-# 音声の正規化
 def normalize_audio(audio: np.ndarray) -> np.ndarray:
+    """
+        音声データの正規化
+    """
+    
     max_val = np.max(np.abs(audio))
     return audio / max_val if max_val > 0 else audio
