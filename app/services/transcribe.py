@@ -48,7 +48,7 @@ class AudioTranscriber:
 
     def transcribe_from_array(self, audio_data: np.ndarray, sample_rate: int, segment_sec=60, max_workers=2) -> str:
         """
-        NumPy配列の音声データを30秒のセグメントごとに文字起こし⇨結果を結合⇨要約の実施
+        NumPy配列の音声データを60秒のセグメントごとに文字起こし⇨結果を結合⇨要約の実施
 
         Args:
             audio_data (np.ndarray): 録音された音声データ。
@@ -63,7 +63,6 @@ class AudioTranscriber:
         segment_len = segment_sec * sample_rate
         num_segments = math.ceil(len(normalized_audio) / segment_len)
 
-        # セグメントごとに分割して文字起こし
         segments = []
         for i in range(num_segments):
             start = i * segment_len
@@ -78,6 +77,7 @@ class AudioTranscriber:
 
         # 医学用語の補正
         corrected_text = self.summarize.correct_medical_terms(texts)
+        print(f"補正結果: {corrected_text}")
         print("要約を開始します")
         summrize_result  = self.summarize.summarize_text(corrected_text)
         print("要約終了")
