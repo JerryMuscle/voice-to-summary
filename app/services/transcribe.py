@@ -1,5 +1,4 @@
 import numpy as np
-import soundfile as sf
 import torch
 import math
 from concurrent.futures import ThreadPoolExecutor
@@ -97,6 +96,5 @@ def normalize_audio(audio: np.ndarray) -> np.ndarray:
     """
         音声データの正規化
     """
-    
     max_val = np.max(np.abs(audio))
     return audio / max_val if max_val > 0 else audio

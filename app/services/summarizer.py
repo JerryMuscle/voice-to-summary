@@ -21,7 +21,6 @@ class Summarizer:
         
         """
         try:
-
             # プロンプト作成（補正指示）
             messages = [
                 {"role": "system", "content": "あなたは医学の専門家です。"},
@@ -63,7 +62,6 @@ class Summarizer:
         """
 
         try:
-
             # プロンプト作成（要約指示）
             messages = [
                 {"role": "system", "content": "あなたは医学の専門家であり、優秀な日本語の文章要約者です。"},
